@@ -8,7 +8,7 @@ use utoipa::{
         security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
         server::{ServerBuilder, ServerVariableBuilder},
     },
-    Component, Modify, OpenApi,
+    Component, GenericComponent, Modify, OpenApi,
 };
 
 #[derive(Deserialize, Serialize, Component)]
@@ -99,6 +99,23 @@ macro_rules! build_foo {
     };
 }
 
+#[derive(Deserialize, Serialize, Component)]
+struct A {
+    a: String,
+}
+
+#[derive(Deserialize, Serialize, Component)]
+struct B {
+    b: i64,
+}
+
+#[derive(Deserialize, Serialize, Component)]
+#[aliases(GenericC = C<A, B>, GenericD = C<B, A>)]
+struct C<T, R> {
+    field_1: R,
+    field_2: T,
+}
+
 #[test]
 #[ignore = "this is just a test bed to run macros"]
 fn derive_openapi() {
@@ -109,6 +126,30 @@ fn derive_openapi() {
     println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
 
     build_foo!(GetFooBody, Foo, FooResources);
+
+    // utoipa::component!(
+    //     type GenericC = C<A, B>;
+    // );
+
+    // #[
+    //     aliases(type GenericC = C<A, B>; type GenericB = C<D, E>;)
+    // ]
+    // impl utoipa::GenericComponent for C<A, B>
+    // where
+    //     Self: utoipa::Component,
+    // {
+    //     fn component() -> utoipa::openapi::schema::Component {
+    //         dbg!("generic component");
+    //         <Self as Component>::component()
+    //     }
+    // }
+
+    // dbg!(<C::<A, B> as GenericComponent>::component());
+
+    // utoipa::component!(GenericC {
+    //     field_1: B { b: 0 },
+    //     field_2: A { a: String::new() },
+    // });
 }
 
 impl Modify for Foo {
